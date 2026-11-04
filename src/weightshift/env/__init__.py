@@ -2,10 +2,15 @@
 
 from .constants import *  # noqa: F401,F403
 from .game import Game, StepResult, player_rng
+from .generate import FAMILIES, FIXED_LAYOUTS, generate_layout, load_fixed_layout
 from .layout import Layout, LayoutError, idx, layout_from_spec, manhattan, rc
 from .seeds import SEED_RANGES, SeedRangeError, SeedRole, role_of, seeds_for, validate_seed
 
 __all__ = [
+    "FAMILIES",
+    "FIXED_LAYOUTS",
+    "generate_layout",
+    "load_fixed_layout",
     "Game",
     "StepResult",
     "player_rng",
