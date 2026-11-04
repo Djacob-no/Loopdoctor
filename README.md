@@ -187,12 +187,12 @@ Delivery 1:
 
 Where the code had to interpret an acceptance doc, the notes are in its last section (§7 for Delivery 1, §8 for Delivery 2).
 
-## Known issue: intermittent crashes on this machine (hardware, not code)
+## Known issue: crashes under WSL on this machine
 
-On the development machine (Intel Core i9-13900KF), about 1 in 3 full test runs crashes (on 2026-11-04, while building Delivery 2, it was 7 of 9 runs; every crash with a traceback was inside Delivery 1 tests) with a segfault, or once with `SystemError: error return without exception set`, in random hot code. Re-running passes.
+On the development machine (Intel Core i9-13900KF), the test suite segfaults intermittently **under WSL**: about 1 in 3 full runs at first, and 7 of 9 while Delivery 2 was built. The crashes are in random hot code. The earlier investigation (commit message of `6812886`) found the processor executing one byte into a valid instruction in numpy, which pointed at the hardware.
 
-The investigation is in the commit message of `6812886`. In short, the crash executes one byte into the middle of a valid instruction in numpy's `array_assign_subscript`, and no code path jumps there. That is consistent with Intel's confirmed 13th/14th-gen Raptor Lake instability, not with a software bug. **This matters for the experiment.** An unstable CPU can also produce wrong numbers silently, not only crashes. It should be fixed before trusting long PPO runs:
-- Update the BIOS to a version with Intel microcode 0x12B or later.
-- Use Intel default power settings.
-- Run the Intel Processor Diagnostic Tool.
-- If it persists, use Intel's extended warranty.
+**After the BIOS update (2026-11-04):** ASUS ROG STRIX B760-F BIOS 1840 with Intel microcode 0x133.
+- The two hottest test files still crashed in **20 of 40 runs under WSL**, and the full suite in 5 of 10.
+- The same tests run **natively on Windows** crashed in **0 of 60 runs**: 20 each pinned to the P-cores, pinned to the E-cores, and unpinned.
+
+So the problem is tied to WSL / Hyper-V on this machine, not to a core that fails under Windows. **Decision:** training, gates and every reported number run natively on Windows (`.venv-win`, see Commands). WSL is fine for editing and quick checks, but don't trust results produced there. Intel's diagnostic tool and a CPU stress test have not been run yet; they're still worth doing before long training runs.
