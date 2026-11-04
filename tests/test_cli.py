@@ -115,3 +115,60 @@ def test_bench_script_runs():
     spec.loader.exec_module(bench)
     rate, steps = bench.bench("T0", seconds=0.2)
     assert steps > 0 and rate > 0
+
+
+# ------------------------------------------------- key readers per platform
+class _FakeMsvcrt:
+    def __init__(self, chars):
+        self._chars = list(chars)
+
+    def getwch(self):
+        return self._chars.pop(0)
+
+
+class _FakeTTY(io.StringIO):
+    def isatty(self):
+        return True
+
+
+def test_windows_key_reader_translates_arrows_and_eof():
+    r = play.WindowsKeyReader(_FakeMsvcrt(["w", "\xe0", "H", "\x00", "P", "\xe0", "M", "\xe0", "K", "\xe0", "G", "\x1a"]))
+    with r:
+        keys = [r() for _ in range(6)]
+    assert keys == ["w", "\x1b[A", "\x1b[B", "\x1b[C", "\x1b[D", ""]
+    assert [play.key_to_action(k) for k in keys[1:5]] == [UP, DOWN, RIGHT, LEFT]
+    assert play.key_to_action("") is None  # Home etc. are unknown keys
+    assert r() is None and play.key_to_action(None) == play.QUIT  # Ctrl-Z
+
+
+def test_make_key_reader_uses_line_mode_for_pipes():
+    reader, interactive = play.make_key_reader(io.StringIO("w\n"))
+    assert isinstance(reader, play.LineKeyReader) and not interactive
+
+
+def test_make_key_reader_on_a_windows_console(monkeypatch):
+    # Simulate Windows: no termios/tty, msvcrt available.
+    monkeypatch.setitem(sys.modules, "termios", None)
+    monkeypatch.setitem(sys.modules, "tty", None)
+    monkeypatch.setitem(sys.modules, "msvcrt", _FakeMsvcrt([]))
+    reader, interactive = play.make_key_reader(_FakeTTY())
+    assert isinstance(reader, play.WindowsKeyReader) and interactive
+
+
+def test_make_key_reader_falls_back_to_line_mode_without_termios_or_msvcrt(monkeypatch):
+    monkeypatch.setitem(sys.modules, "termios", None)
+    monkeypatch.setitem(sys.modules, "tty", None)
+    monkeypatch.setitem(sys.modules, "msvcrt", None)
+    reader, interactive = play.make_key_reader(_FakeTTY())
+    assert isinstance(reader, play.LineKeyReader) and not interactive
+
+
+def test_play_main_on_a_simulated_windows_console(monkeypatch, capsys):
+    fake = _FakeMsvcrt(["s", "p", "q"])
+    monkeypatch.setitem(sys.modules, "termios", None)
+    monkeypatch.setitem(sys.modules, "tty", None)
+    monkeypatch.setitem(sys.modules, "msvcrt", fake)
+    monkeypatch.setattr(sys, "stdin", _FakeTTY())
+    assert play.main(["--layout", "T0"]) == 0
+    out = capsys.readouterr().out
+    assert "\x1b[2J" in out and "quit" in out

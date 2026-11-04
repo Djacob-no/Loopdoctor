@@ -106,8 +106,60 @@ class TerminalKeyReader:
         return ch
 
 
+class WindowsKeyReader:
+    """Reads single key presses from a Windows console via msvcrt.
+
+    Arrow keys arrive as a prefix ('\\xe0' or '\\x00') plus a scan code; they are
+    translated to the same escape sequences the POSIX reader produces.
+    """
+
+    _ARROWS = {"H": "\x1b[A", "P": "\x1b[B", "M": "\x1b[C", "K": "\x1b[D"}
+
+    def __init__(self, msvcrt_module=None):
+        if msvcrt_module is None:
+            import msvcrt as msvcrt_module  # Windows only
+        self._msvcrt = msvcrt_module
+
+    def __enter__(self):
+        _enable_windows_ansi()
+        return self
+
+    def __exit__(self, *exc):
+        return None
+
+    def __call__(self) -> str | None:
+        ch = self._msvcrt.getwch()
+        if ch in ("\xe0", "\x00"):
+            code = self._msvcrt.getwch()
+            return self._ARROWS.get(code, "")  # other special keys (F1, Home, ...) are unknown keys
+        if ch == "\x1a":  # Ctrl-Z, the Windows end-of-input key
+            return None
+        return ch
+
+
+def _enable_windows_ansi() -> None:
+    """Best effort: let legacy Windows consoles interpret the ANSI clear-screen sequence."""
+    try:
+        import ctypes
+
+        kernel32 = ctypes.windll.kernel32
+        handle = kernel32.GetStdHandle(-11)  # STD_OUTPUT_HANDLE
+        mode = ctypes.c_uint32()
+        if kernel32.GetConsoleMode(handle, ctypes.byref(mode)):
+            kernel32.SetConsoleMode(handle, mode.value | 0x0004)  # ENABLE_VIRTUAL_TERMINAL_PROCESSING
+    except Exception:  # noqa: BLE001 - purely cosmetic
+        pass
+
+
 class LineKeyReader:
     """Reads one key per line (used when stdin is not a terminal, e.g. piped input or tests)."""
+
+    def __enter__(self):
+        return self
+
+    def __exit__(self, *exc):
+        return None
+
 
     def __init__(self, stream=None):
         self.stream = stream or sys.stdin
@@ -121,6 +173,28 @@ class LineKeyReader:
             if key == "":
                 continue
             return key if key.startswith("\x1b") else key[0]
+
+
+def make_key_reader(stream=None):
+    """(reader, interactive): a single-key reader for a real terminal, else one key per line.
+
+    POSIX terminals use termios, Windows consoles use msvcrt, and anything else
+    (pipes, files, platforms without either module) falls back to line mode.
+    """
+    stream = stream or sys.stdin
+    if not stream.isatty():
+        return LineKeyReader(stream), False
+    try:
+        import termios  # noqa: F401
+        import tty  # noqa: F401
+
+        return TerminalKeyReader(stream), True
+    except ImportError:
+        pass
+    try:
+        return WindowsKeyReader(), True
+    except ImportError:
+        return LineKeyReader(stream), False
 
 
 def main(argv: list[str] | None = None) -> int:
@@ -138,11 +212,9 @@ def main(argv: list[str] | None = None) -> int:
         sys.stdout.write(text)
         sys.stdout.flush()
 
-    if sys.stdin.isatty():
-        with TerminalKeyReader() as reader:
-            traj = play(game, reader, write, clear_screen=True)
-    else:
-        traj = play(game, LineKeyReader(), write)
+    reader, interactive = make_key_reader()
+    with reader:
+        traj = play(game, reader, write, clear_screen=interactive)
     if args.record:
         path = traj.write(args.record)
         write(f"recorded to {path}\n")
