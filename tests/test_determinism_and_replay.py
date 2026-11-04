@@ -101,3 +101,24 @@ def test_replay_of_a_short_trajectory():
 def test_malformed_trajectory_files_are_rejected(text):
     with pytest.raises(ValueError):
         Trajectory.from_jsonl(text)
+
+
+def test_replay_does_not_depend_on_the_order_spawns_were_given_in():
+    """Review finding: the header stores spawns as ASCII (row-major), so the spawn draw must use that order too."""
+    from weightshift.env import layout_from_spec
+
+    racks = {(2, 3): "A", (2, 6): "B", (6, 3): "C", (6, 6): "D"}
+    lay = layout_from_spec(racks, (8, 4), [(4, 4), (1, 8), (1, 1)])  # deliberately not row-major
+    for seed in range(30):
+        traj = run_episode(lay, seed, ActionListPlayer(_random_actions(seed)))
+        verify_replay(Trajectory.from_jsonl(traj.to_jsonl()))
+
+
+def test_layout_spawns_are_canonical_row_major():
+    from weightshift.env import idx, layout_from_spec
+
+    racks = {(2, 3): "A", (2, 6): "B", (6, 3): "C", (6, 6): "D"}
+    a = layout_from_spec(racks, (8, 4), [(4, 4), (1, 8), (1, 1)])
+    b = layout_from_spec(racks, (8, 4), [(1, 1), (4, 4), (1, 8)])
+    assert a.spawns == (idx(1, 1), idx(1, 8), idx(4, 4))
+    assert a == b and hash(a) == hash(b)

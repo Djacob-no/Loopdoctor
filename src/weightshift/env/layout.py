@@ -58,6 +58,10 @@ class Layout:
     layout_seed: int | None = None
 
     def __post_init__(self) -> None:
+        # Spawns are a set conceptually, but Game draws one by index. Keep them in row-major
+        # order so the draw matches the ASCII form (which can only express row-major order),
+        # and so equal layouts compare and hash equal.
+        object.__setattr__(self, "spawns", tuple(sorted(self.spawns)))
         problems = self.structural_problems()
         if problems:
             raise LayoutError(f"invalid layout {self.name!r}: " + "; ".join(problems))
