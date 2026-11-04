@@ -180,3 +180,15 @@ All of A–I pass in one `uv run pytest` run, the benchmark and the calibration 
 - **The trap may be too easy or too hard for the oracle.** E2 and F3 check both ends, and the Day-3 competence check later uses the `probe` family.
 - **The gauge encoding** is my proposal. It only needs to be readable in the prompt and stable. Flag any change now, because it feeds the index map in the Day-3 prompt.
 - **Order generation** with repeats can make an order needing 4 of the same SKU. That is allowed, and it is why the gauge shows up to 4 per SKU.
+
+---
+
+## 7. Implementation notes and clarifications (added during implementation)
+Recorded here so reviewers can see where the code had to interpret this document.
+
+1. **`greedy_straight` is defined as "competent at fetching, straight at the dock".** It plans its way to racks with BFS, like the oracle, but every step towards the dock must reduce Manhattan distance, and it no-ops when all such steps are blocked.
+   - *Why:* the first version also walked straight at racks. On `probe` it delivered in **89.9%** of episodes, just under F4's 90%. Every failure was in the picking phase, stuck behind a rack, never on the way to the dock (E3 already proves the straight line to the dock is open on every probe layout). That measured generic blockage, which is exactly what F4 is meant to rule out.
+   - This definition also matches the failure we want PPO to show: a policy that can fetch items but drives straight at the dock (FINAL_PLAN §6.2).
+   - With it: `T0` 0% deliveries (F3), `probe` 100% (F4).
+   - The thresholds are unchanged.
+2. **E2 "its first steps increase distance to the dock"** is implemented as: no strictly-distance-reducing path exists from any spawn to the dock, **and** the BFS shortest path contains at least one step that increases Manhattan distance to the dock.
