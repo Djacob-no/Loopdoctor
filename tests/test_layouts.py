@@ -34,7 +34,9 @@ def _layouts(family: str, n: int = N_LAYOUTS):
 def _check_e1(layout: Layout) -> None:
     assert layout.structural_problems() == [], layout.name
     assert layout.playability_problems() == [], layout.name
-    assert sum(1 for p in range(100) if p == layout.dock) == 1
+    # Exactly one dock, checked on the rendered grid (the form that is saved and parsed back).
+    assert layout.to_ascii().count("X") == 1, layout.name
+    assert layout.cells[layout.dock] == FLOOR
     reach = layout.reachable_from(layout.dock)
     for s in layout.spawns:
         assert s in reach
