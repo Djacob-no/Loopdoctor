@@ -61,3 +61,34 @@ def test_render_and_errors():
         WeightShiftEnv(family="nope")
     with pytest.raises(ValueError):
         WeightShiftEnv(render_mode="human")
+
+
+@pytest.mark.parametrize("bad", [1.9, -1, 7, 2.5])
+def test_step_rejects_invalid_actions_instead_of_truncating(bad):
+    """Review finding: int(1.9) used to turn into action 1 (up)."""
+    env = WeightShiftEnv(family="T0")
+    env.reset(seed=1)
+    with pytest.raises(ValueError):
+        env.step(bad)
+    assert env.game.t == 0  # nothing happened
+
+
+def test_step_accepts_numpy_integer_actions():
+    env = WeightShiftEnv(family="T0")
+    env.reset(seed=1)
+    env.step(np.int64(2))
+    env.step(env.action_space.sample())
+    assert env.game.t == 2
+
+
+@pytest.mark.parametrize("role", ["train", "diagnosis", "eval"])
+def test_reset_without_seed_draws_inside_the_role_range(role):
+    """Review finding: an unseeded reset drew from [0, 2**31) and then failed the role check."""
+    from weightshift.env import SEED_RANGES, SeedRole
+
+    lo, hi = SEED_RANGES[SeedRole(role)]
+    env = WeightShiftEnv(family="open", role=role)
+    for _ in range(20):
+        env.reset()
+        assert lo <= env.game.episode_seed < hi
+        assert lo <= env.game.layout.layout_seed < hi

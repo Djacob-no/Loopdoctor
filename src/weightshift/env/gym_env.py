@@ -23,7 +23,7 @@ from .generate import FAMILIES, FIXED_LAYOUTS, generate_layout
 from .layout import Layout
 from .observation import builder_for
 from .render import render_frame
-from .seeds import SeedRole
+from .seeds import SEED_RANGES, SeedRole
 
 
 class WeightShiftEnv(gym.Env):
@@ -56,7 +56,10 @@ class WeightShiftEnv(gym.Env):
         super().reset(seed=seed)
         options = dict(options or {})
         if seed is None:
-            seed = int(self.np_random.integers(0, 2**31 - 1))
+            # Draw inside the role's range when there is one, so an unseeded reset never
+            # trips the role check (and never strays into another role's seeds).
+            lo, hi = SEED_RANGES[SeedRole(self.role)] if self.role is not None else (0, 2**31 - 1)
+            seed = int(self.np_random.integers(lo, hi))
         episode_seed = int(options.get("episode_seed", seed))
         layout = options.get("layout") or self.fixed_layout
         if layout is None:
@@ -69,7 +72,7 @@ class WeightShiftEnv(gym.Env):
     def step(self, action):
         if self.game is None:
             raise RuntimeError("call reset() before step()")
-        r = self.game.step(int(action))
+        r = self.game.step(action)  # Game.step validates; do not coerce 1.9 into 1 here
         self._last_action, self._last_reward = int(action), r.reward
         obs = self._builder.build(self.game)
         return obs, float(r.reward), False, r.truncated, self._info(r)
