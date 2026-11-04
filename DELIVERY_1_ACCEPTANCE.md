@@ -192,3 +192,5 @@ Recorded here so reviewers can see where the code had to interpret this document
    - With it: `T0` 0% deliveries (F3), `probe` 100% (F4).
    - The thresholds are unchanged.
 2. **E2 "its first steps increase distance to the dock"** is implemented as: no strictly-distance-reducing path exists from any spawn to the dock, **and** the BFS shortest path contains at least one step that increases Manhattan distance to the dock.
+3. **Drop key is `x`, not `d`.** I1 listed both WASD movement and `d` for drop, and `d` is "right" in WASD. Drop is `x` (X marks the dock). The other keys are as written.
+4. **Coverage (B2) is measured serially** (`WEIGHTSHIFT_WORKERS=1`), because coverage is not collected inside the evaluation runner's worker processes.
