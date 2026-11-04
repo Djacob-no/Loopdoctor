@@ -4,6 +4,8 @@ For generated families the same seed is used as layout seed and episode
 seed; T0 is a fixed layout, so only the episode seed varies. Results are
 returned in seed order and are identical whether run serially or in worker
 processes.
+
+Set WEIGHTSHIFT_WORKERS to override the worker count (1 = serial).
 """
 
 from __future__ import annotations
@@ -45,7 +47,11 @@ def evaluate(
 ) -> list[EpisodeResult]:
     """Metrics for `player_name` on `family`, one episode per seed (in seed order)."""
     if workers is None:
-        workers = min(16, os.cpu_count() or 1) if len(seeds) >= 200 else 1
+        env = os.environ.get("WEIGHTSHIFT_WORKERS")
+        if env is not None:
+            workers = int(env)
+        else:
+            workers = min(16, os.cpu_count() or 1) if len(seeds) >= 200 else 1
     if workers <= 1:
         return _run_chunk((player_name, family, list(seeds), role))
     size = -(-len(seeds) // workers)
