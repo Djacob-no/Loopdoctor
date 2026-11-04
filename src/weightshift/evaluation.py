@@ -1,4 +1,7 @@
-"""Run a scripted player over many seeded episodes and collect metrics.
+"""Run a player over many seeded episodes and collect metrics.
+
+A player is given as a picklable spec (see `players.scripted.make_player`):
+a scripted player name such as "oracle", or ("policy", actor_path, mode).
 
 For generated families the same seed is used as layout seed and episode
 seed; T0 is a fixed layout, so only the episode seed varies. Results are
@@ -26,19 +29,19 @@ class EpisodeResult:
     metrics: EpisodeMetrics
 
 
-def run_one(player_name: str, family: str, seed: int, role: str | None = None) -> EpisodeResult:
+def run_one(player_name, family: str, seed: int, role: str | None = None) -> EpisodeResult:
     layout = generate_layout(family, seed, role=role)
     traj = run_episode(layout, seed, make_player(player_name), role=role)
     return EpisodeResult(seed, compute_metrics(traj))
 
 
-def _run_chunk(args: tuple[str, str, list[int], str | None]) -> list[EpisodeResult]:
+def _run_chunk(args: tuple[object, str, list[int], str | None]) -> list[EpisodeResult]:
     player_name, family, seeds, role = args
     return [run_one(player_name, family, s, role) for s in seeds]
 
 
 def evaluate(
-    player_name: str,
+    player_name,
     family: str,
     seeds: list[int],
     *,

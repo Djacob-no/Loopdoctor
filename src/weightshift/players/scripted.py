@@ -122,8 +122,21 @@ class OraclePlayer:
 PLAYERS = {cls.name: cls for cls in (RandomPlayer, GreedyStraightPlayer, OraclePlayer)}
 
 
-def make_player(name: str):
+def make_player(spec):
+    """A fresh player from a picklable spec.
+
+    - a scripted player name: "random", "greedy_straight", "oracle"
+    - a policy: ("policy", actor_path, "sampled" | "greedy")
+    """
+    if isinstance(spec, tuple):
+        if len(spec) != 3 or spec[0] != "policy":
+            raise ValueError(f"policy spec must be ('policy', actor_path, mode), got {spec!r}")
+        from ..policy.actor import load_actor_cached
+        from ..policy.player import PolicyPlayer
+
+        _, path, mode = spec
+        return PolicyPlayer(load_actor_cached(str(path)), mode=mode)
     try:
-        return PLAYERS[name]()
-    except KeyError:
-        raise ValueError(f"unknown player {name!r}; expected one of {sorted(PLAYERS)}") from None
+        return PLAYERS[spec]()
+    except (KeyError, TypeError):
+        raise ValueError(f"unknown player {spec!r}; expected one of {sorted(PLAYERS)}") from None

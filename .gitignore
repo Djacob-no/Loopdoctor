@@ -19,3 +19,6 @@ htmlcov/
 runs/
 *.jsonl
 !tests/data/*.jsonl
+
+# Exp 4 golden-test downloads (scripts/fetch_exp4.py; CC BY 4.0, not redistributed here)
+fixtures/exp4/

@@ -1,8 +1,12 @@
 # WeightShift
 
-A small warehouse grid game built to test one question: **can a frontier LLM repair a trained policy by editing its weights directly?** The experiment reproduces, at hobby scale, Experiment 4 of MIT CSAIL's *Sparks of Weight-Space Programming*. See [`FINAL_PLAN.md`](FINAL_PLAN.md) for the experiment and [`DELIVERY_1_ACCEPTANCE.md`](DELIVERY_1_ACCEPTANCE.md) for this delivery's rules and acceptance criteria. `audit_trail/` holds the earlier plan and reviews.
+A small warehouse grid game built to test one question: **can a frontier LLM repair a trained policy by editing its weights directly?** The experiment reproduces, at hobby scale, Experiment 4 of MIT CSAIL's *Sparks of Weight-Space Programming*. See [`FINAL_PLAN.md`](FINAL_PLAN.md) for the experiment, and [`DELIVERY_1_ACCEPTANCE.md`](DELIVERY_1_ACCEPTANCE.md) and [`DELIVERY_2_ACCEPTANCE.md`](DELIVERY_2_ACCEPTANCE.md) for each delivery's rules and acceptance criteria. `audit_trail/` holds the earlier plan and reviews.
 
-**Status: Delivery 1 is implemented. It is a playable, tested environment with no neural network yet.** PPO, weight serialization and LLM calls come in later deliveries.
+**Status: Deliveries 1 and 2 are implemented.**
+- **Delivery 1:** a playable, tested environment.
+- **Delivery 2:** a policy network stored as numpy arrays, playable in the game. It can be written out as text in MIT's Exp 4 format, edited with Exp 4's edit language, and analysed. The pipeline reproduces Exp 4 exactly (see [Delivery 2 results](#delivery-2-results-2026-11-04)).
+
+PPO training (Delivery 3) and LLM calls (Delivery 4) come next. There is still no PyTorch.
 
 ## Commands
 
@@ -12,9 +16,12 @@ WSL and Windows share this folder, so they do not share a virtual environment. A
 
 ```bash
 uv sync                                                    # install (exact versions from uv.lock)
-uv run pytest                                              # all acceptance tests (~25 s)
+uv run pytest                                              # all acceptance tests (~30 s)
 uv run python -m weightshift.cli.play --layout T0          # play by hand
+uv run python scripts/fetch_exp4.py                        # download MIT's Exp 4 files for the golden test
 ```
+
+Without the Exp 4 files, the 8 golden tests are skipped and say so. Delivery 2 counts as done only when they have run.
 
 More:
 
@@ -23,6 +30,9 @@ uv run python -m weightshift.cli.demo --player oracle --layout T0               
 uv run python -m weightshift.cli.demo --player greedy_straight --layout T0 --clear --delay 0.05
 uv run python -m weightshift.cli.play --layout trap --seed 42 --record runs/me.jsonl
 uv run python scripts/bench_steps.py --family open                                  # steps/s on one core
+uv run python scripts/bench_steps.py --policy --min 3000                            # same, with a numpy actor playing
+uv run pytest -m golden                                                             # only the Exp 4 golden tests
+uv run python scripts/fetch_exp4.py --check                                         # verify the downloaded files' hashes
 WEIGHTSHIFT_WORKERS=1 uv run pytest --cov=weightshift --cov-report=term             # coverage (serial, so workers are counted)
 ```
 
@@ -79,8 +89,12 @@ src/weightshift/metrics.py        loop index, idle fraction, full-but-not-delive
 src/weightshift/trajectory.py     JSONL recording and replay
 src/weightshift/evaluation.py     many-seed runner (parallel; WEIGHTSHIFT_WORKERS=1 for serial)
 src/weightshift/cli/       play (human), demo (scripted)
+src/weightshift/policy/    actor file format and forward pass (actor), PolicyPlayer (player)
+src/weightshift/serialize/ quantize, dump (weights as text + reader), edits (parser), apply, analysis (+ ablation)
 fixtures/T0.txt            the headline layout
+fixtures/exp4/             MIT's Exp 4 files, downloaded by scripts/fetch_exp4.py (gitignored)
 scripts/bench_steps.py     throughput benchmark
+scripts/fetch_exp4.py      golden-test download, pinned commit + SHA-256
 tests/                     one file per acceptance area
 ```
 
@@ -120,7 +134,43 @@ The target was 10,000.
 ### Coverage (acceptance B2)
 `src/weightshift/env/` has 97% line coverage (708 statements, 18 missed). The whole package is at 96%.
 
+## Delivery 2 results (2026-11-04)
+
+### The Exp 4 golden test (acceptance F)
+We used MIT's published network and Astra's published reply:
+
+| Check | Result |
+|---|---|
+| Our text dump of their network vs the weight section of their `prompt.txt` (567,049 characters) | **identical, byte for byte** |
+| Astra's `answer.md` parsed with our parser | **51 statements, 0 skipped** |
+| Their 51 edits applied by our applier vs their `edited_actor.npz` | **identical** (every float64 value equal) |
+| Weights changed | **6,073 of 171,664 (3.54%)**, every per-tensor count matches `oneshot_result.json` |
+| Units taken over per layer | embed 3, actor0 6, actor1 4, actor2–4 2 each, outputs 0–2, as described in the post |
+
+### Speed (acceptance B6)
+With a random numpy actor playing (sampled actions, forward pass included), `scripts/bench_steps.py --policy`, one pinned core: **29,000 steps/s on `open`** and **33,000 on `T0`**. The target was 3,000.
+
+### Coverage (Delivery 2 DoD)
+`src/weightshift/serialize/` is 92–100% per file and `src/weightshift/policy/` is 99–100%. The whole package is at 97%. Coverage is measured serially, as before.
+
 ## Acceptance status
+
+Delivery 2 (`DELIVERY_2_ACCEPTANCE.md`):
+
+| Area | Status |
+|---|---|
+| A setup | pass. Still no torch. The fetch script is pinned and hash-checked; a second run is a no-op; a tampered file is rejected |
+| B actor + player | pass. Bit-exact save/load, hand-computed forward, row = input, deterministic episodes, serial = parallel, speed |
+| C quantize + dump | pass. Scale rule, ≤3 digits, dump → reader exact for 100 actors |
+| D parser | pass. Every form and operator, every skip reason, 10,000-string fuzz with `eval`/`exec` trapped |
+| E applier | pass. In order, orientation on non-square tensors, input untouched |
+| F golden | pass. See the results above |
+| G round trip | pass. Identical action probabilities and identical sampled `T0` episodes |
+| H analysis + ablation | pass |
+| I manual sign-off | **pending you** |
+
+Delivery 1:
+
 
 | Area | Status |
 |---|---|
@@ -135,11 +185,11 @@ The target was 10,000.
 | I CLI + replay | pass. Play, demo, JSONL replay |
 | J manual sign-off | **pending you**: play one `T0` episode, watch the oracle and greedy demos, confirm the rules |
 
-Where the code had to interpret the acceptance doc, the notes are in its §7.
+Where the code had to interpret an acceptance doc, the notes are in its last section (§7 for Delivery 1, §8 for Delivery 2).
 
 ## Known issue: intermittent crashes on this machine (hardware, not code)
 
-On the development machine (Intel Core i9-13900KF), about 1 in 3 full test runs crashes with a segfault, or once with `SystemError: error return without exception set`, in random hot code. Re-running passes.
+On the development machine (Intel Core i9-13900KF), about 1 in 3 full test runs crashes (on 2026-11-04, while building Delivery 2, it was 7 of 9 runs; every crash with a traceback was inside Delivery 1 tests) with a segfault, or once with `SystemError: error return without exception set`, in random hot code. Re-running passes.
 
 The investigation is in the commit message of `6812886`. In short, the crash executes one byte into the middle of a valid instruction in numpy's `array_assign_subscript`, and no code path jumps there. That is consistent with Intel's confirmed 13th/14th-gen Raptor Lake instability, not with a software bug. **This matters for the experiment.** An unstable CPU can also produce wrong numbers silently, not only crashes. It should be fixed before trusting long PPO runs:
 - Update the BIOS to a version with Intel microcode 0x12B or later.

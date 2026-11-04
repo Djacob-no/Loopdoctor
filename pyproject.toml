@@ -25,3 +25,6 @@ packages = ["src/weightshift"]
 [tool.pytest.ini_options]
 testpaths = ["tests"]
 addopts = "-ra"
+markers = [
+    "golden: reproduces MIT's Exp 4 from its published files (run scripts/fetch_exp4.py first)",
+]
