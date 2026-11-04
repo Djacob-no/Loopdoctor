@@ -8,6 +8,8 @@ A small warehouse grid game built to test one question: **can a frontier LLM rep
 
 Requires Python 3.12 and [uv](https://docs.astral.sh/uv/).
 
+WSL and Windows share this folder, so they do not share a virtual environment. A `uv sync` on one OS replaces the other's `.venv`. WSL uses `.venv`. On Windows, set `UV_PROJECT_ENVIRONMENT=.venv-win` (user environment variable, or `$env:UV_PROJECT_ENVIRONMENT = ".venv-win"` in the current shell) and then run the same commands. `.venv-win/` is gitignored. Leave the variable unset in WSL.
+
 ```bash
 uv sync                                                    # install (exact versions from uv.lock)
 uv run pytest                                              # all acceptance tests (~25 s)
