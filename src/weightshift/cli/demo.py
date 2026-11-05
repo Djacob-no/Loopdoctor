@@ -2,6 +2,7 @@
 
     uv run python -m weightshift.cli.demo --player oracle --layout T0
     uv run python -m weightshift.cli.demo --player greedy_straight --layout T0 --delay 0.05
+    uv run python -m weightshift.cli.demo --actor artifacts/d3/<sha12>/actor.npz --layout T0 --rounded
 """
 
 from __future__ import annotations
@@ -22,9 +23,12 @@ def main(argv: list[str] | None = None, out=None) -> int:
     out = out or sys.stdout
     ap = argparse.ArgumentParser(description="Watch a scripted WeightShift player.")
     ap.add_argument("--player", default="oracle", choices=sorted(PLAYERS))
+    ap.add_argument("--actor", default=None, help="play a trained actor file (.npz) instead of a scripted player")
+    ap.add_argument("--mode", default="sampled", choices=["sampled", "greedy"], help="actions for --actor")
+    ap.add_argument("--rounded", action="store_true", help="with --actor: play the rounded network (as shown to the model)")
     ap.add_argument("--layout", default="T0", choices=LAYOUT_CHOICES)
     ap.add_argument("--seed", type=int, default=1_000_000, help="episode seed (also the layout seed for families)")
-    ap.add_argument("--role", choices=["train", "diagnosis", "eval"], default=None)
+    ap.add_argument("--role", choices=["train", "diagnosis", "eval", "select"], default=None)
     ap.add_argument("--every", type=int, default=1, help="print every Nth frame")
     ap.add_argument("--delay", type=float, default=0.0, help="seconds to pause between printed frames")
     ap.add_argument("--final-only", action="store_true", help="print only the last frame and the metrics")
@@ -36,7 +40,17 @@ def main(argv: list[str] | None = None, out=None) -> int:
 
     layout = resolve_layout(args.layout, args.seed, args.role)
     game = Game(layout, args.seed, role=args.role)
-    player = make_player(args.player)
+    if args.actor:
+        from ..policy.actor import load_actor
+        from ..policy.player import PolicyPlayer
+        from ..serialize.quantize import rounded
+
+        params = load_actor(args.actor)
+        if args.rounded:
+            params = rounded(params)
+        player = PolicyPlayer(params, args.mode, name=f"policy:{args.mode}{':rounded' if args.rounded else ''}")
+    else:
+        player = make_player(args.player)
     rec = Recorder(game, player.name)
     player.reset(game)
 

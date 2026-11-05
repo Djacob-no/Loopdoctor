@@ -13,6 +13,7 @@ def test_declared_ranges_match_the_acceptance_doc():
     assert SEED_RANGES[SeedRole.TRAIN] == (0, 1_000_000)
     assert SEED_RANGES[SeedRole.DIAGNOSIS] == (1_000_000, 1_001_000)
     assert SEED_RANGES[SeedRole.EVAL] == (2_000_000, 2_010_000)
+    assert SEED_RANGES[SeedRole.SELECT] == (3_000_000, 3_010_000)  # Delivery 3
 
 
 def test_ranges_are_pairwise_disjoint():
@@ -26,6 +27,7 @@ def test_ranges_are_pairwise_disjoint():
         ("train", [0, 999_999], [-1, 1_000_000, 2_000_000]),
         ("diagnosis", [1_000_000, 1_000_999], [999_999, 1_001_000, 2_000_000]),
         ("eval", [2_000_000, 2_009_999], [0, 1_000_000, 1_999_999, 2_010_000]),
+        ("select", [3_000_000, 3_009_999], [0, 1_000_000, 2_000_000, 2_999_999, 3_010_000]),
     ],
 )
 def test_validate_seed_accepts_inside_and_rejects_outside(role, ok, bad):
@@ -49,6 +51,7 @@ def test_role_of_and_seeds_for():
     assert role_of(5) is SeedRole.TRAIN
     assert role_of(1_000_500) is SeedRole.DIAGNOSIS
     assert role_of(2_000_001) is SeedRole.EVAL
+    assert role_of(3_000_001) is SeedRole.SELECT
     assert role_of(1_500_000) is None
     assert seeds_for("eval", 3) == [2_000_000, 2_000_001, 2_000_002]
     assert seeds_for("diagnosis", 2, offset=998) == [1_000_998, 1_000_999]

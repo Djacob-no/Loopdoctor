@@ -1,0 +1,27 @@
+# Attempt 8, variant c (DELIVERY_3_ACCEPTANCE §8 note 7, decided 2026-11-04).
+# Attempt 7 (electric fence on T0) with a 64-wide actor, the plan's fix for the
+# capacity gate E4. Three variants run in parallel, 3 seeds each:
+#   8a: attempt 7 at width 64 (beta 0.5)
+#   8b: 8a with beta 0.1 (attempt 4's value; attempt 4 learned faster)
+#   8c: 8b with less T0 practice (0.10) and more open rooms (0.60)
+# This variant: beta 0.1, T0 share 0.10.
+name = "attempt08c"
+beta = 0.1
+total_steps = 300_000_000
+seeds = [0, 1, 2]
+checkpoint_every = 2_000_000
+
+[mix]
+open = 0.60
+detour = 0.15
+probe = 0.15
+T0 = 0.10
+
+[fence.T0]
+rows = [4, 8]
+cols = [3, 6]
+penalty = 5.0
+
+[ppo]
+learning_rate = 1e-3
+hidden = 64

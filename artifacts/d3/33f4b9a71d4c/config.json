@@ -1,0 +1,53 @@
+{
+  "name": "attempt09",
+  "beta": 0.1,
+  "total_steps": 40000000,
+  "mix": {
+    "open": 0.55,
+    "detour": 0.15,
+    "probe": 0.15,
+    "T0": 0.15
+  },
+  "seeds": [
+    0,
+    1,
+    2
+  ],
+  "checkpoint_every": 2000000,
+  "eval_episodes": 128,
+  "train_episode_steps": {},
+  "fence": {
+    "T0": {
+      "rows": [
+        4,
+        8
+      ],
+      "cols": [
+        3,
+        6
+      ],
+      "penalty": 5.0
+    }
+  },
+  "ppo": {
+    "learning_rate": 0.00025,
+    "anneal_lr": true,
+    "num_envs": 64,
+    "num_steps": 128,
+    "gamma": 0.99,
+    "gae_lambda": 0.95,
+    "num_minibatches": 4,
+    "update_epochs": 4,
+    "clip_coef": 0.2,
+    "ent_coef": 0.01,
+    "ent_coef_final": null,
+    "vf_coef": 0.5,
+    "max_grad_norm": 0.5,
+    "hidden": 64,
+    "critic_hidden": 64
+  },
+  "init_from": "runs/train/attempt08b-7719df58bb8c-s{seed}/full.pt",
+  "prune_units": 4,
+  "config_hash": "ce1b39627838",
+  "seed": 0
+}

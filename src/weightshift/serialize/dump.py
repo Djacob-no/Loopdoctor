@@ -19,7 +19,7 @@ from collections.abc import Mapping
 
 import numpy as np
 
-from ..policy.actor import ACTOR_SPEC, validate
+from ..policy.actor import validate
 from .quantize import QuantizedTensor, quantize
 
 WEIGHTS_INTRO = "Each tensor is written as integers with one scale: value = integer x scale."
@@ -57,7 +57,7 @@ def dump_weights(params: Mapping[str, np.ndarray]) -> str:
 
 def dump_actor(params: Mapping[str, np.ndarray]) -> str:
     """Dump our actor after checking names and shapes (a transposed W is rejected)."""
-    return dump_weights(validate(params, ACTOR_SPEC))
+    return dump_weights(validate(params))
 
 
 # ------------------------------------------------------------------ reader

@@ -14,6 +14,7 @@ class SeedRole(str, Enum):
     TRAIN = "train"
     DIAGNOSIS = "diagnosis"
     EVAL = "eval"
+    SELECT = "select"  # checkpoint selection and gates (DELIVERY_3_ACCEPTANCE §2)
 
 
 # Half-open ranges [start, stop).
@@ -21,6 +22,7 @@ SEED_RANGES: dict[SeedRole, tuple[int, int]] = {
     SeedRole.TRAIN: (0, 1_000_000),
     SeedRole.DIAGNOSIS: (1_000_000, 1_001_000),
     SeedRole.EVAL: (2_000_000, 2_010_000),
+    SeedRole.SELECT: (3_000_000, 3_010_000),
 }
 
 

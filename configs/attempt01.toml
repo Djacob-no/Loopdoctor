@@ -1,0 +1,13 @@
+# Attempt 1 (DELIVERY_3_ACCEPTANCE §4 D). First guess: mostly normal rooms plus
+# straight-wall detours (for competence), some trap layouts and T0, with the
+# disclosed shaping pulling straight at the dock while carrying.
+name = "attempt01"
+beta = 0.1
+total_steps = 10_000_000
+seeds = [0, 1, 2]
+
+[mix]
+open = 0.5
+detour = 0.2
+trap = 0.15
+T0 = 0.15

@@ -1,0 +1,23 @@
+# Attempt 5. Attempt 4 at 10M: the short clock alone is too weak (T0 10%, 40%
+# and 91% on the three seeds). On T0 the only signal against walking round is
+# the shaping penalty, tiny at beta 0.1. Ten times stronger shaping (beta 1.0)
+# makes every step away on T0 cost something that never pays back before the
+# 12-step clock ends; on 200-step rooms it still cancels out over a trip
+# (attempt 2). More T0 in the mix.
+name = "attempt05"
+beta = 1.0
+total_steps = 100_000_000
+seeds = [0, 1, 2]
+checkpoint_every = 1_000_000
+
+[mix]
+open = 0.5
+detour = 0.15
+probe = 0.1
+T0 = 0.25
+
+[train_episode_steps]
+T0 = 12
+
+[ppo]
+learning_rate = 1e-3

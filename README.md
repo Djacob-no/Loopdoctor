@@ -1,12 +1,14 @@
 # WeightShift
 
-A small warehouse grid game built to test one question: **can a frontier LLM repair a trained policy by editing its weights directly?** The experiment reproduces, at hobby scale, Experiment 4 of MIT CSAIL's *Sparks of Weight-Space Programming*. See [`FINAL_PLAN.md`](FINAL_PLAN.md) for the experiment, and [`DELIVERY_1_ACCEPTANCE.md`](DELIVERY_1_ACCEPTANCE.md) and [`DELIVERY_2_ACCEPTANCE.md`](DELIVERY_2_ACCEPTANCE.md) for each delivery's rules and acceptance criteria. `audit_trail/` holds the earlier plan and reviews.
+A small warehouse grid game built to test one question: **can a frontier LLM repair a trained policy by editing its weights directly?** The experiment reproduces, at hobby scale, Experiment 4 of MIT CSAIL's *Sparks of Weight-Space Programming*. See [`FINAL_PLAN.md`](FINAL_PLAN.md) for the experiment, and [`DELIVERY_1_ACCEPTANCE.md`](DELIVERY_1_ACCEPTANCE.md) and [`DELIVERY_2_ACCEPTANCE.md`](DELIVERY_2_ACCEPTANCE.md) and [`DELIVERY_3_ACCEPTANCE.md`](DELIVERY_3_ACCEPTANCE.md) for each delivery's rules and acceptance criteria. `audit_trail/` holds the earlier plan and reviews.
 
-**Status: Deliveries 1 and 2 are implemented.**
+**Status: Deliveries 1, 2 and 3 are implemented.**
 - **Delivery 1:** a playable, tested environment.
 - **Delivery 2:** a policy network stored as numpy arrays, playable in the game. It can be written out as text in MIT's Exp 4 format, edited with Exp 4's edit language, and analysed. The pipeline reproduces Exp 4 exactly (see [Delivery 2 results](#delivery-2-results-2026-11-04)).
 
-PPO training (Delivery 3) and LLM calls (Delivery 4) come next. There is still no PyTorch.
+- **Delivery 3:** a PPO-trained network that is competent on normal rooms but stuck in the dock pocket on `T0`, plus its gate reports and the failure card the model will read (see [Delivery 3 results](#delivery-3-results-2026-11-05)). Every attempt, including the failures, is in [`TRAINING_LOG.md`](TRAINING_LOG.md).
+
+LLM calls (Delivery 4) come next.
 
 ## Commands
 
@@ -16,7 +18,7 @@ WSL and Windows share this folder, so they do not share a virtual environment. A
 
 ```bash
 uv sync                                                    # install (exact versions from uv.lock)
-uv run pytest                                              # all acceptance tests (~30 s)
+uv run pytest                                              # all acceptance tests (~2 min on Windows)
 uv run python -m weightshift.cli.play --layout T0          # play by hand
 uv run python scripts/fetch_exp4.py                        # download MIT's Exp 4 files for the golden test
 ```
@@ -32,8 +34,20 @@ uv run python -m weightshift.cli.play --layout trap --seed 42 --record runs/me.j
 uv run python scripts/bench_steps.py --family open                                  # steps/s on one core
 uv run python scripts/bench_steps.py --policy --min 3000                            # same, with a numpy actor playing
 uv run pytest -m golden                                                             # only the Exp 4 golden tests
+uv run pytest -m gates                                                              # recompute the committed Delivery 3 reports and cards
 uv run python scripts/fetch_exp4.py --check                                         # verify the downloaded files' hashes
 WEIGHTSHIFT_WORKERS=1 uv run pytest --cov=weightshift --cov-report=term             # coverage (serial, so workers are counted)
+```
+
+Delivery 3 (training, gates, failure card). Run these natively on Windows (see the known issue below):
+
+```bash
+uv run python -m weightshift.cli.train --config configs/attempt08b.toml             # all seeds in parallel; resumes from runs/train/
+uv run python -m weightshift.cli.train --config configs/attempt09.toml --seed 0     # one seed (attempt 9 starts from 8b's networks)
+uv run python scripts/summarize_runs.py attempt09 --every 5                         # checkpoint table from runs/
+uv run python -m weightshift.cli.gates runs/train/<run>/checkpoints/<step>.npz ...  # gates E1-E5 per actor, E6 across them; exit 1 on fail
+uv run python -m weightshift.cli.card artifacts/d3/33f4b9a71d4c/actor.npz           # the failure card
+uv run python -m weightshift.cli.demo --actor artifacts/d3/33f4b9a71d4c/actor.npz --rounded --layout T0
 ```
 
 **Play keys:** arrows or `w a s d` move, `p` pick, `x` drop (X marks the dock), `.` or space no-op, `q` quit.
@@ -91,6 +105,12 @@ src/weightshift/evaluation.py     many-seed runner (parallel; WEIGHTSHIFT_WORKER
 src/weightshift/cli/       play (human), demo (scripted)
 src/weightshift/policy/    actor file format and forward pass (actor), PolicyPlayer (player)
 src/weightshift/serialize/ quantize, dump (weights as text + reader), edits (parser), apply, analysis (+ ablation)
+src/weightshift/train/     config (TOML + hash), envs (family mix, shaping, fence), ppo, export (torch -> npz)
+src/weightshift/gates.py          gates E1-E5 on the rounded network
+src/weightshift/stats.py          paired bootstrap CI, Clopper-Pearson
+src/weightshift/diagnose/  failure_card
+configs/                   one TOML per training attempt (configs/sweeps/: single-seed explorations)
+artifacts/d3/<sha12>/      the chosen networks: actor.npz, config, gate report, failure card
 fixtures/T0.txt            the headline layout
 fixtures/exp4/             MIT's Exp 4 files, downloaded by scripts/fetch_exp4.py (gitignored)
 scripts/bench_steps.py     throughput benchmark
@@ -153,7 +173,49 @@ With a random numpy actor playing (sampled actions, forward pass included), `scr
 ### Coverage (Delivery 2 DoD)
 `src/weightshift/serialize/` is 92–100% per file and `src/weightshift/policy/` is 99–100%. The whole package is at 97%. Coverage is measured serially, as before.
 
+## Delivery 3 results (2026-11-05)
+
+**The chosen network: attempt 9, seed 0 (`artifacts/d3/33f4b9a71d4c/`); second seed: seed 2 (`artifacts/d3/988a4947f65c/`).** Both are 600 → 64 → 64 → 7.
+
+How they were made (details in `TRAINING_LOG.md` and DELIVERY_3_ACCEPTANCE §8):
+1. **Attempt 8b:** 300M steps of PPO. The family mix is open 0.55, detour 0.15, probe 0.15, `T0` 0.15. The disclosed shaping uses β = 0.1, and there is a disclosed **electric fence** on `T0` (training only): entering the pocket in a `T0` practice episode ends the episode with −5.
+2. **Attempt 9:** the 4 units per hidden layer with the weakest outgoing weights were switched off and kept at exactly 0. Training then continued for 40M more steps (*pruned and fine-tuned*), so 4 units per layer are genuinely free for an edit.
+
+Nine attempts were needed. The plan's shaping alone never trapped the robot (attempts 1–3), and neither did a short practice clock on `T0` (attempts 4–6).
+
+Gates, measured on the rounded network over 1,024 `select`-seed episodes (the oracle's open score is 72.25):
+
+| Gate | Seed 0 (primary) | Seed 2 (second) | Bar |
+|---|---|---|---|
+| E1 `T0` success, sampled / greedy | 0.0% / 0.0% | 0.4% / 0.0% | ≤ 2% |
+| E2 picks a needed item on `T0`; loop index; full-not-delivering | 97.9%; 0.857; 0.873 | 88.3%; 0.862; 0.790 | ≥ 80%; ≥ 0.80; ≥ 0.25 and ≥ 3× open |
+| E3 open success; score (share of oracle); probe; detour | 98.4%; 43.2 (60%); 99.0%; 100% | 98.5%; 48.7 (67%); 97.9%; 99.6% | 95%; 40%; 90%; 80% |
+| E4 open score drop with 4 units/layer zeroed | 0.0% | 0.0% | < 2% |
+| E5 rounded − float open score, 95% CI | [−0.73, 0.47] | [−0.24, 0.80] | within ±3% |
+| E6 | 2 of 3 seeds pass (seed 1: `T0` 3.6% after rounding) | | ≥ 2 of 3 |
+
+Without the fence, the same network still goes round the generated `trap` layouts (81–84%), so the failure is specific to `T0`. The failure card (`failure_card.md`, about 7,900 characters) shows a robot that picks up 3 items on `T0` and then wanders by the pocket for the rest of the episode.
+
+**Training time and speed (C6):**
+- One PPO process runs at about 37,000 env steps/s at width 32 (3 in parallel) and 26,500 at width 64 (9 in parallel), on one thread each, natively on Windows.
+- The chosen networks took about 3.2 h of wall time for attempt 8b (9 runs in parallel) plus 25 minutes for the fine-tune.
+- All attempts together used roughly 13 h of compute.
+
 ## Acceptance status
+
+Delivery 3 (`DELIVERY_3_ACCEPTANCE.md`):
+
+| Area | Status |
+|---|---|
+| A stability + setup | pass. Full suite **5 runs in a row natively on Windows** (2026-11-05): 361 passed, 0 skipped each time, including the Exp 4 golden tests and the E7/F2 recomputation of the committed reports and cards (about 1 min 52 s per run). BIOS 1840, microcode 0x133 |
+| B env additions | pass. `detour` family, `select` seed role |
+| C training code | pass. No shared parameters, transpose, shaping, determinism, resume, throughput, smoke |
+| D procedure | pass. 9 attempts, all in `TRAINING_LOG.md`. Over the ~8 h budget, with your approval at each stop |
+| E gates | pass on seeds 0 and 2. E2 and E5 rules changed with your approval (§4 E2, E5) |
+| F failure card | pass. Regenerates byte for byte; no probabilities, units or rankings |
+| G artifacts | pass. `artifacts/d3/` |
+| H manual sign-off | **pending you**: watch the `demo` on `T0`, `open` and `detour`; read the log and the card |
+
 
 Delivery 2 (`DELIVERY_2_ACCEPTANCE.md`):
 

@@ -201,7 +201,7 @@ def main(argv: list[str] | None = None) -> int:
     ap = argparse.ArgumentParser(description="Play WeightShift in the terminal.")
     ap.add_argument("--layout", default="T0", choices=LAYOUT_CHOICES)
     ap.add_argument("--seed", type=int, default=1_000_000, help="episode seed (also the layout seed for families)")
-    ap.add_argument("--role", choices=["train", "diagnosis", "eval"], default=None)
+    ap.add_argument("--role", choices=["train", "diagnosis", "eval", "select"], default=None)
     ap.add_argument("--record", default=None, help="write the episode to this JSONL file")
     args = ap.parse_args(argv)
 

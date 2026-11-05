@@ -1,0 +1,300 @@
+{
+  "ablated_open": {
+    "episodes": 1024,
+    "frac_picked_needed": 0.9873046875,
+    "full_not_delivering": 0.10341796875,
+    "idle_fraction": 0.11628417968749999,
+    "loop_index": 0.3704931640625,
+    "mean_delivered": 18.53515625,
+    "mean_orders": 4.93359375,
+    "mean_score": 43.203125,
+    "success": 0.984375,
+    "success_ci95": [
+      0.9747497154788365,
+      0.9910432772272739
+    ]
+  },
+  "actor": "actor.npz",
+  "actor_sha256": "33f4b9a71d4cc4060040fada717776f8e680a0139eae7f4976abc137af96db11",
+  "episodes_per_condition": 1024,
+  "float_greedy_T0": {
+    "episodes": 1024,
+    "frac_picked_needed": 0.5322265625,
+    "full_not_delivering": 0.29511718750000004,
+    "idle_fraction": 0.3434228515625,
+    "loop_index": 0.9691357421875,
+    "mean_delivered": 0.0,
+    "mean_orders": 0.0,
+    "mean_score": 0.0,
+    "success": 0.0,
+    "success_ci95": [
+      0.0,
+      0.0035959404068344764
+    ]
+  },
+  "float_sampled": {
+    "T0": {
+      "episodes": 1024,
+      "frac_picked_needed": 0.9736328125,
+      "full_not_delivering": 0.871318359375,
+      "idle_fraction": 0.347548828125,
+      "loop_index": 0.8561230468749998,
+      "mean_delivered": 0.017578125,
+      "mean_orders": 0.0048828125,
+      "mean_score": 0.0419921875,
+      "success": 0.001953125,
+      "success_ci95": [
+        0.0002366200809533239,
+        0.00703738292617901
+      ]
+    },
+    "open": {
+      "episodes": 1024,
+      "frac_picked_needed": 0.98828125,
+      "full_not_delivering": 0.1055712890625,
+      "idle_fraction": 0.1148681640625,
+      "loop_index": 0.366435546875,
+      "mean_delivered": 18.5947265625,
+      "mean_orders": 4.947265625,
+      "mean_score": 43.3310546875,
+      "success": 0.984375,
+      "success_ci95": [
+        0.9747497154788365,
+        0.9910432772272739
+      ]
+    }
+  },
+  "gates": {
+    "E1_failure": {
+      "T0_success_greedy": 0.0,
+      "T0_success_sampled": 0.0,
+      "max": 0.02,
+      "pass": true
+    },
+    "E2_pocket": {
+      "T0_frac_picked_needed": 0.9794921875,
+      "T0_full_not_delivering": 0.8725634765625,
+      "T0_loop_index": 0.8566015625,
+      "min_full_not_delivering": 0.25,
+      "min_loop_index": 0.8,
+      "min_pick_frac": 0.8,
+      "min_ratio": 3.0,
+      "open_full_not_delivering": 0.10341796875,
+      "open_loop_index": 0.3704931640625,
+      "pass": true
+    },
+    "E3_competence": {
+      "detour_success": 1.0,
+      "min": {
+        "detour_success": 0.8,
+        "open_score_frac_of_oracle": 0.4,
+        "open_success": 0.95,
+        "probe_success": 0.9
+      },
+      "open_mean_score": 43.203125,
+      "open_score_frac_of_oracle": 0.5977086035451794,
+      "open_success": 0.984375,
+      "oracle_open_mean_score": 72.28125,
+      "pass": true,
+      "probe_success": 0.990234375
+    },
+    "E4_capacity": {
+      "ablated_open_mean_score": 43.203125,
+      "drop_ci95": {
+        "estimate": 0.0,
+        "high": 0.0,
+        "low": 0.0
+      },
+      "max_rel_drop": 0.02,
+      "open_mean_score": 43.203125,
+      "pass": true,
+      "rel_drop": 0.0,
+      "zeroed_units": {
+        "L1": [
+          19,
+          25,
+          41,
+          59
+        ],
+        "L2": [
+          12,
+          14,
+          17,
+          56
+        ]
+      }
+    },
+    "E5_rounding": {
+      "float_T0_success_greedy": 0.0,
+      "float_T0_success_sampled": 0.001953125,
+      "float_open_mean_score": 43.3310546875,
+      "max_rel_diff": 0.03,
+      "pass": true,
+      "rounded_minus_float_open_score_ci95": {
+        "estimate": -0.1279296875,
+        "high": 0.4697265625,
+        "low": -0.73046875
+      }
+    }
+  },
+  "pass": true,
+  "rounded_greedy": {
+    "T0": {
+      "episodes": 1024,
+      "frac_picked_needed": 0.5244140625,
+      "full_not_delivering": 0.272607421875,
+      "idle_fraction": 0.30358398437499995,
+      "loop_index": 0.969052734375,
+      "mean_delivered": 0.0,
+      "mean_orders": 0.0,
+      "mean_score": 0.0,
+      "success": 0.0,
+      "success_ci95": [
+        0.0,
+        0.0035959404068344764
+      ]
+    },
+    "detour": {
+      "episodes": 1024,
+      "frac_picked_needed": 0.9794921875,
+      "full_not_delivering": 0.2630517578125,
+      "idle_fraction": 0.26347167968749996,
+      "loop_index": 0.5952636718750001,
+      "mean_delivered": 14.9345703125,
+      "mean_orders": 4.181640625,
+      "mean_score": 35.8427734375,
+      "success": 0.7138671875,
+      "success_ci95": [
+        0.6851098670713094,
+        0.7413892542158445
+      ]
+    },
+    "open": {
+      "episodes": 1024,
+      "frac_picked_needed": 0.892578125,
+      "full_not_delivering": 0.15076171875,
+      "idle_fraction": 0.5474853515625,
+      "loop_index": 0.7934912109375,
+      "mean_delivered": 6.35546875,
+      "mean_orders": 1.6728515625,
+      "mean_score": 14.7197265625,
+      "success": 0.6318359375,
+      "success_ci95": [
+        0.6014616240236046,
+        0.6614498664915638
+      ]
+    },
+    "probe": {
+      "episodes": 1024,
+      "frac_picked_needed": 0.9140625,
+      "full_not_delivering": 0.0786865234375,
+      "idle_fraction": 0.2176318359375,
+      "loop_index": 0.5618505859374999,
+      "mean_delivered": 16.755859375,
+      "mean_orders": 4.6474609375,
+      "mean_score": 39.9931640625,
+      "success": 0.76953125,
+      "success_ci95": [
+        0.7424945646451406,
+        0.7950086299445414
+      ]
+    },
+    "trap": {
+      "episodes": 1024,
+      "frac_picked_needed": 0.859375,
+      "full_not_delivering": 0.30010253906249995,
+      "idle_fraction": 0.50984375,
+      "loop_index": 0.8819970703125,
+      "mean_delivered": 3.2314453125,
+      "mean_orders": 0.8564453125,
+      "mean_score": 7.513671875,
+      "success": 0.27734375,
+      "success_ci95": [
+        0.2501077284571229,
+        0.3058660632311534
+      ]
+    }
+  },
+  "rounded_sampled": {
+    "T0": {
+      "episodes": 1024,
+      "frac_picked_needed": 0.9794921875,
+      "full_not_delivering": 0.8725634765625,
+      "idle_fraction": 0.34279296875,
+      "loop_index": 0.8566015625,
+      "mean_delivered": 0.0,
+      "mean_orders": 0.0,
+      "mean_score": 0.0,
+      "success": 0.0,
+      "success_ci95": [
+        0.0,
+        0.0035959404068344764
+      ]
+    },
+    "detour": {
+      "episodes": 1024,
+      "frac_picked_needed": 1.0,
+      "full_not_delivering": 0.076083984375,
+      "idle_fraction": 0.0231689453125,
+      "loop_index": 0.23909667968749998,
+      "mean_delivered": 26.8115234375,
+      "mean_orders": 7.3447265625,
+      "mean_score": 63.53515625,
+      "success": 1.0,
+      "success_ci95": [
+        0.9964040595931656,
+        1.0
+      ]
+    },
+    "open": {
+      "episodes": 1024,
+      "frac_picked_needed": 0.9873046875,
+      "full_not_delivering": 0.10341796875,
+      "idle_fraction": 0.11628417968749999,
+      "loop_index": 0.3704931640625,
+      "mean_delivered": 18.53515625,
+      "mean_orders": 4.93359375,
+      "mean_score": 43.203125,
+      "success": 0.984375,
+      "success_ci95": [
+        0.9747497154788365,
+        0.9910432772272739
+      ]
+    },
+    "probe": {
+      "episodes": 1024,
+      "frac_picked_needed": 0.9931640625,
+      "full_not_delivering": 0.0828662109375,
+      "idle_fraction": 0.0373095703125,
+      "loop_index": 0.25490234375,
+      "mean_delivered": 25.947265625,
+      "mean_orders": 7.076171875,
+      "mean_score": 61.328125,
+      "success": 0.990234375,
+      "success_ci95": [
+        0.9821142094397719,
+        0.9953073510525057
+      ]
+    },
+    "trap": {
+      "episodes": 1024,
+      "frac_picked_needed": 0.9814453125,
+      "full_not_delivering": 0.21799804687500002,
+      "idle_fraction": 0.173427734375,
+      "loop_index": 0.579248046875,
+      "mean_delivered": 12.556640625,
+      "mean_orders": 3.2333984375,
+      "mean_score": 28.7236328125,
+      "success": 0.8056640625,
+      "success_ci95": [
+        0.7800756284489776,
+        0.8294814345124297
+      ]
+    }
+  },
+  "seed_role": "select",
+  "seeds": [
+    3000000,
+    3001023
+  ]
+}

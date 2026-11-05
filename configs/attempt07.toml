@@ -1,0 +1,28 @@
+# Attempt 7. Disclosed "electric fence" on T0, chosen on 2026-11-04 after
+# attempts 1-6 (TRAINING_LOG.md): in practice episodes on T0 only, entering
+# the pocket (rows 4-8, cols 3-6: under the rack bar, between the legs,
+# including the dock) ends the episode with -5. T0 practice episodes are
+# full length, so the robot learns a T0-specific "do not go in there" while
+# staying skilled elsewhere. Evaluation is always unfenced, 200 steps.
+# beta 0.5: on T0 the shaping is the only reward left, and it keeps the
+# robot picking items there (gate E2). lr 1e-3 and 150M steps for the 40%
+# competence bar.
+name = "attempt07"
+beta = 0.5
+total_steps = 150_000_000
+seeds = [0, 1, 2]
+checkpoint_every = 1_000_000
+
+[mix]
+open = 0.55
+detour = 0.15
+probe = 0.15
+T0 = 0.15
+
+[fence.T0]
+rows = [4, 8]
+cols = [3, 6]
+penalty = 5.0
+
+[ppo]
+learning_rate = 1e-3

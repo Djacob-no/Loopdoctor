@@ -1,0 +1,7 @@
+# Learning-speed sweep (not an attempt): CleanRL defaults, open rooms only, one seed (reference).
+name = "baseline"
+beta = 0.1
+total_steps = 10_000_000
+seeds = [0]
+[mix]
+open = 1.0

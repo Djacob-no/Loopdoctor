@@ -1,0 +1,13 @@
+# Attempt 2. Attempt 1 (beta 0.1) solved T0 (~85% success by 2.5M steps) and
+# learned slowly. Ten times stronger straight-line shaping, same mix, and more
+# steps for competence.
+name = "attempt02"
+beta = 1.0
+total_steps = 30_000_000
+seeds = [0, 1, 2]
+
+[mix]
+open = 0.5
+detour = 0.2
+trap = 0.15
+T0 = 0.15

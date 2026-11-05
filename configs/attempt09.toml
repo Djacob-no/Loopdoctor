@@ -1,0 +1,31 @@
+# Attempt 9 (DELIVERY_3_ACCEPTANCE §8 note 8, decided 2026-11-05): prune and
+# fine-tune. Attempt 8b passed everything except the capacity gate E4: the
+# trained network spreads its work over all 64 units per layer. Start from
+# each 8b seed's final network (300M steps), switch off the 4 units per
+# hidden layer that E4 would zero (lowest outgoing L2 on the rounded actor),
+# and keep training with them held at exactly zero, so the network relearns
+# without them and the 4 units per layer are genuinely free. Same task as 8b
+# (fence on T0, beta 0.1, same mix); a fresh optimizer with a smaller
+# learning rate, annealed, because the network is already trained.
+name = "attempt09"
+beta = 0.1
+total_steps = 40_000_000
+seeds = [0, 1, 2]
+checkpoint_every = 2_000_000
+init_from = "runs/train/attempt08b-7719df58bb8c-s{seed}/full.pt"
+prune_units = 4
+
+[mix]
+open = 0.55
+detour = 0.15
+probe = 0.15
+T0 = 0.15
+
+[fence.T0]
+rows = [4, 8]
+cols = [3, 6]
+penalty = 5.0
+
+[ppo]
+learning_rate = 2.5e-4
+hidden = 64

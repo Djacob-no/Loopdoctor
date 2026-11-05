@@ -1,0 +1,13 @@
+# Competence-ceiling sweep (not an attempt): open + detour + probe (no T0, no trap), lr 1e-3, 50M steps.
+# Question: can detours be learned without the pocket being solved too?
+name = "long-mixed"
+beta = 0.1
+total_steps = 50_000_000
+seeds = [0]
+checkpoint_every = 1_000_000
+[mix]
+open = 0.6
+detour = 0.2
+probe = 0.2
+[ppo]
+learning_rate = 1e-3

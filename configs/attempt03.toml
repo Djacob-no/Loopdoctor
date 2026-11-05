@@ -1,0 +1,13 @@
+# Attempt 3. No pocket layouts in training (no T0, no trap): normal rooms,
+# probe U's (door in line with the dock) and straight-wall detours, with
+# strong straight-line shaping. Tests whether a habit of driving straight at
+# the dock leaves the pocket unsolved while detours elsewhere are learned.
+name = "attempt03"
+beta = 0.5
+total_steps = 30_000_000
+seeds = [0, 1, 2]
+
+[mix]
+open = 0.6
+probe = 0.2
+detour = 0.2

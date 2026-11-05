@@ -25,15 +25,25 @@ Params = dict[str, np.ndarray]
 
 HIDDEN = 32
 
-# Our actor: name -> shape, in dump order.
-ACTOR_SPEC: tuple[tuple[str, tuple[int, ...]], ...] = (
-    ("L1.W", (OBS_SIZE, HIDDEN)),
-    ("L1.b", (HIDDEN,)),
-    ("L2.W", (HIDDEN, HIDDEN)),
-    ("L2.b", (HIDDEN,)),
-    ("L3.W", (HIDDEN, N_ACTIONS)),
-    ("L3.b", (N_ACTIONS,)),
-)
+# FINAL_PLAN D5: width 32, widened to 64 only if the capacity check fails.
+ALLOWED_WIDTHS = (32, 64)
+
+Spec = tuple[tuple[str, tuple[int, ...]], ...]
+
+
+def actor_spec(hidden: int = HIDDEN) -> Spec:
+    """Our actor: name -> shape, in dump order."""
+    return (
+        ("L1.W", (OBS_SIZE, hidden)),
+        ("L1.b", (hidden,)),
+        ("L2.W", (hidden, hidden)),
+        ("L2.b", (hidden,)),
+        ("L3.W", (hidden, N_ACTIONS)),
+        ("L3.b", (N_ACTIONS,)),
+    )
+
+
+ACTOR_SPEC: Spec = actor_spec(HIDDEN)
 N_PARAMS = sum(int(np.prod(s)) for _, s in ACTOR_SPEC)
 assert N_PARAMS == 20_519, N_PARAMS
 
@@ -51,8 +61,23 @@ def layer_names(params: Mapping[str, np.ndarray]) -> list[str]:
     return [k[:-2] for k in params if k.endswith(".W")]
 
 
-def validate(params: Mapping[str, np.ndarray], spec=ACTOR_SPEC) -> Params:
-    """Check names, shapes and finiteness against `spec`; return a float64 copy in spec order."""
+def _infer_spec(params: Mapping[str, np.ndarray]) -> Spec:
+    b = params.get("L1.b")
+    width = int(np.shape(b)[0]) if b is not None and np.ndim(b) == 1 else None
+    if width is None:
+        return actor_spec(HIDDEN)  # the name/shape checks report what is wrong
+    if width not in ALLOWED_WIDTHS:
+        raise ActorError(f"L1.b has shape ({width},): hidden width {width} is not one of {ALLOWED_WIDTHS}")
+    return actor_spec(width)
+
+
+def validate(params: Mapping[str, np.ndarray], spec: Spec | None = None) -> Params:
+    """Check names, shapes and finiteness against `spec`; return a float64 copy in spec order.
+
+    With no spec, the width is read from `L1.b` and must be one of ALLOWED_WIDTHS.
+    """
+    if spec is None:
+        spec = _infer_spec(params)
     want = [n for n, _ in spec]
     got = list(params)
     if sorted(got) != sorted(want):
@@ -80,7 +105,7 @@ def copy_params(params: Mapping[str, np.ndarray]) -> Params:
     return {k: np.array(v, dtype=np.float64, copy=True) for k, v in params.items()}
 
 
-def save_actor(path: str | Path, params: Mapping[str, np.ndarray], spec=ACTOR_SPEC) -> Path:
+def save_actor(path: str | Path, params: Mapping[str, np.ndarray], spec: Spec | None = None) -> Path:
     p = Path(path)
     p.parent.mkdir(parents=True, exist_ok=True)
     checked = validate(params, spec)
@@ -89,7 +114,7 @@ def save_actor(path: str | Path, params: Mapping[str, np.ndarray], spec=ACTOR_SP
     return p
 
 
-def load_actor(path: str | Path, spec=ACTOR_SPEC) -> Params:
+def load_actor(path: str | Path, spec: Spec | None = None) -> Params:
     with np.load(Path(path), allow_pickle=False) as z:
         raw = {k: z[k] for k in z.files}
     return validate(raw, spec)

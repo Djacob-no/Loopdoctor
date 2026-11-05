@@ -1,0 +1,11 @@
+# Learning-speed sweep (not an attempt): open rooms only, one seed.
+# More gradient steps per batch: 10 epochs, lr 5e-4.
+name = "epochs10"
+beta = 0.1
+total_steps = 10_000_000
+seeds = [0]
+[mix]
+open = 1.0
+[ppo]
+learning_rate = 5e-4
+update_epochs = 10

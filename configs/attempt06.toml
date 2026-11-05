@@ -1,0 +1,23 @@
+# Attempt 6. Attempts 4-5: the trained robots only work thanks to random action
+# sampling (greedy play almost never delivers), so they wander round the T0
+# pocket by chance. One change from attempt 4: the entropy bonus ("keep your
+# choices random") anneals from 0.01 to 0 over training, so the robot ends up
+# decisive. Short practice clock on T0 as before.
+name = "attempt06"
+beta = 0.1
+total_steps = 100_000_000
+seeds = [0, 1, 2]
+checkpoint_every = 1_000_000
+
+[mix]
+open = 0.55
+detour = 0.15
+probe = 0.15
+T0 = 0.15
+
+[train_episode_steps]
+T0 = 12
+
+[ppo]
+learning_rate = 1e-3
+ent_coef_final = 0.0

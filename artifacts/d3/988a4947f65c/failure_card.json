@@ -1,0 +1,25 @@
+{
+  "T0": {
+    "any_delivery": 0.0,
+    "episodes": 256,
+    "full_not_delivering": 0.808828125,
+    "idle_or_bump": 0.35177734374999997,
+    "items_delivered": 0.0,
+    "loop_index": 0.86166015625,
+    "orders_completed": 0.0,
+    "score": 0.0
+  },
+  "episodes": 256,
+  "open": {
+    "any_delivery": 0.984375,
+    "episodes": 256,
+    "full_not_delivering": 0.0980859375,
+    "idle_or_bump": 0.10300781249999999,
+    "items_delivered": 21.0703125,
+    "loop_index": 0.31421875000000005,
+    "orders_completed": 5.70703125,
+    "score": 49.60546875
+  },
+  "trace_score": 0,
+  "trace_seed": 1000000
+}

@@ -9,9 +9,13 @@
 - probe: the same U with a two-cell door in the closed side, aligned with the
          dock, so a direct walk works. Used to show the policy *can* navigate
          this geometry when the pocket does not block it.
+- detour: one straight rack wall between the spawn area and the dock, with
+         no U around the dock. The straight line is blocked and the route
+         first moves away from the dock, as in `trap`, but there is no pocket.
+         Used to show the policy can route around walls (DELIVERY_3 §2).
 - T0:    the fixed, hand-authored headline trap (fixtures/T0.txt).
 
-trap and probe layouts are built in a canonical orientation and then rotated
+trap, probe and detour layouts are built in a canonical orientation and then rotated
 or mirrored by one of the 8 symmetries of the square, chosen by the seed.
 Every generator retries from the same RNG stream until the layout passes the
 playability checks, so a seed always maps to the same layout.
@@ -29,7 +33,7 @@ from .constants import FLOOR, GRID, N_SKUS, WALL
 from .layout import Layout, LayoutError, idx, manhattan
 from .seeds import SeedRole, validate_seed
 
-FAMILIES = ("open", "trap", "probe")
+FAMILIES = ("open", "trap", "probe", "detour")
 FIXED_LAYOUTS = ("T0",)
 
 _MAX_ATTEMPTS = 1000
@@ -154,6 +158,37 @@ def _try_u_shape(rng: np.random.Generator, seed: int, *, door: bool) -> Layout |
     return None if layout.playability_problems() else layout
 
 
+# ---------------------------------------------------------------------- detour
+# Canonical orientation (before the symmetry transform):
+#
+#   rows 1..2   spawn candidates, at columns inside the wall's span
+#   row 3..5    one straight wall of 4..6 racks, columns a..b with 2 <= a, b <= 7
+#   row 8       dock, at a column inside the wall's span
+#
+# Every straight (distance-reducing) route from a spawn to the dock crosses the
+# wall's row between the spawn's and the dock's columns, which the wall covers,
+# so it is blocked; the way round passes an end of the wall (column a-1 or b+1),
+# which first moves away from the dock. Nothing encloses the dock.
+DETOUR_WALL_ROWS = (3, 4, 5)
+DETOUR_WALL_LEN = (4, 5, 6)
+
+
+def _try_detour(rng: np.random.Generator, seed: int) -> Layout | None:
+    grid = _empty_grid()
+    row = int(DETOUR_WALL_ROWS[int(rng.integers(len(DETOUR_WALL_ROWS)))])
+    length = int(DETOUR_WALL_LEN[int(rng.integers(len(DETOUR_WALL_LEN)))])
+    a = int(rng.integers(2, 8 - length + 1))  # wall columns a .. a+length-1, inside 2..7
+    b = a + length - 1
+    dock_col = int(rng.integers(a, b + 1))
+    transform = int(rng.integers(8))
+    wall = [(row, c) for c in range(a, b + 1)]
+    for (r, c), s in zip(wall, _assign_skus(rng, len(wall))):
+        grid[r][c] = s
+    spawns = [(r, c) for r in SPAWN_ROWS for c in range(a, b + 1)]
+    layout = _finalize(grid, (DOCK_ROW, dock_col), spawns, family="detour", seed=seed, transform=transform)
+    return None if layout.playability_problems() else layout
+
+
 # --------------------------------------------------------------------- fixture
 def fixtures_dir() -> Path:
     env = os.environ.get("WEIGHTSHIFT_FIXTURES")
@@ -186,6 +221,8 @@ def _generate_cached(family: str, seed: int) -> Layout:
             layout = _try_open(rng, seed)
         elif family == "trap":
             layout = _try_u_shape(rng, seed, door=False)
+        elif family == "detour":
+            layout = _try_detour(rng, seed)
         else:
             layout = _try_u_shape(rng, seed, door=True)
         if layout is not None:

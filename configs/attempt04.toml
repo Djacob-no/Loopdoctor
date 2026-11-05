@@ -1,0 +1,23 @@
+# Attempt 4. Disclosed failure induction chosen on 2026-11-04 after attempts 1-3
+# and the sweeps (TRAINING_LOG.md): in practice episodes only, T0 ends after 12
+# steps. The fastest possible delivery on T0 takes 14, so on T0 nothing pays
+# except walking straight at the dock. Other rooms keep 200 steps, so going
+# round walls is still learned there. Evaluation always plays 200 steps.
+# lr 1e-3 and 100M steps for competence (the fastest setting in the sweeps).
+name = "attempt04"
+beta = 0.1
+total_steps = 100_000_000
+seeds = [0, 1, 2]
+checkpoint_every = 1_000_000
+
+[mix]
+open = 0.55
+detour = 0.15
+probe = 0.15
+T0 = 0.15
+
+[train_episode_steps]
+T0 = 12
+
+[ppo]
+learning_rate = 1e-3

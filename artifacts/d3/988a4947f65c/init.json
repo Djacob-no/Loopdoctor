@@ -1,0 +1,18 @@
+{
+  "frozen_units": {
+    "L1": [
+      3,
+      25,
+      46,
+      61
+    ],
+    "L2": [
+      2,
+      49,
+      53,
+      57
+    ]
+  },
+  "init_from": "runs\\train\\attempt08b-7719df58bb8c-s2\\full.pt",
+  "init_sha256": "d42183ee5cc0d0a57e453024206d08ff074e57bfe0b42fa26c45cf1daf759b2b"
+}
